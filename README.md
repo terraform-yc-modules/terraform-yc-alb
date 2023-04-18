@@ -263,7 +263,7 @@ module "alb" {
 
 ### How to configure Terraform for Yandex.Cloud
 
-- Install [YC cli](https://cloud.yandex.com/docs/cli/quickstart)
+- Install [YC CLI](https://cloud.yandex.com/docs/cli/quickstart)
 - Add environment variables for `terraform auth` in Yandex.Cloud:
 
 ```
