@@ -336,7 +336,7 @@ There are no modules available.
 | <a name="input_network_id"></a> [network\_id](#input\_network\_id) | ID of the network the load balancer is located at. | `string` | N/A | Yes |
 | <a name="input_public_dns_zone_id"></a> [public\_dns\_zone\_id](#input\_public\_dns\_zone\_id) | Public DNS zone ID for ALB CM certificates.<br>    The default value is `PLACEHOLDER`, and you can change it to a valid DNS zone ID. | `string` | `"PUBLIC_DNS_ZONE_ID"` | No |
 | <a name="input_security_groups_ids_list"></a> [security\_groups\_ids\_list](#input\_security\_groups\_ids\_list) | List of security group IDs the ALB belongs to. | `list(string)` | `[]` | No |
-| <a name="input_timeouts"></a> [timeouts](#input\_timeouts) | Target group timeouts. | `map(string)` | <pre>{<br>  "create": "15m",<br>  "delete": "15m",<br>  "update": "15m"<br>}</pre> | No |
+| <a name="input_timeouts"></a> [timeouts](#input\_timeouts) | Target group timeouts | `map(string)` | <pre>{<br>  "create": "15m",<br>  "delete": "15m",<br>  "update": "15m"<br>}</pre> | No |
 | <a name="input_traffic_disabled"></a> [traffic\_disabled](#input\_traffic\_disabled) | If specified, it will disable all L7 instances in the zone for request handling. | `bool` | `false` | No |
 | <a name="input_using_self_signed"></a> [using\_self\_signed](#input\_using\_self\_signed) | Flag indicating that a self signed certificate is being used. | `bool` | `false` | No |
 
