@@ -32,18 +32,17 @@ It is enough to provide us such notification once.
 
 ## Pull Request Process
 
-When contributing to this repository, please first discuss the change you wish to make via issue,
-email, or any other method with the owners of this repository before making a change.
+When contributing to this repository, please first discuss the change you wish to make via issue.
 
 1. Update the README.md with details of changes including example hcl blocks and [example files](./examples) if appropriate.
 2. Run pre-commit hooks `pre-commit run -a`.
-3. Once all outstanding comments and checklist items have been addressed, your contribution will be merged! Merged PRs will be included in the next release. Maintainers take care of updating the CHANGELOG as they merge.
+3. Once all outstanding comments and checklist items have been addressed, your contribution will be merged! Merged PRs will be included in the next release.
 
 ## Checklists for contributions
 
 - [ ] You have updated at least one of the examples/* to demonstrate and validate change(s)
 - [ ] You have tested and validated changes using one or more of the provided [examples/*](./examples) projects
-- [ ] README.md has been updated after any changes to variables and outputs. See https://github.com/terraform-aws-modules/terraform-aws-vpc/#doc-generation
+- [ ] README.md has been updated after any changes to variables and outputs.
 - [ ] Run pre-commit hooks `pre-commit run -a`
 - [ ] Done steps from [Provide contributions](#1.0) section
 
