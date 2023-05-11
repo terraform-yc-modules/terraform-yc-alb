@@ -5,11 +5,11 @@ module "alb" {
   network_id           = "<VPC_NETWORK_ID>"
   public_dns_zone_id   = "<PUBLIC_DNS_ZONE_ID>"
   public_dns_zone_name = "<PUBLIC_DNS_ZONE_NAME>"
-  
-  alb_load_balancer   = {
+
+  alb_load_balancer = {
     name = "alb-test"
 
-    alb_target_groups  = {
+    alb_target_groups = {
       "target-group-a" = {
         targets = [
           {
@@ -21,7 +21,7 @@ module "alb" {
             ip_address = "<INSTANCE-IP>"
           },
           {
-            ip_address = "<INSTANCE-IP>"
+            ip_address           = "<INSTANCE-IP>"
             private_ipv4_address = true
           }
         ]
@@ -40,49 +40,49 @@ module "alb" {
       }
     }
 
-    alb_backend_groups         = {
-      "test-bg-a"              = {
-        http_backends          = [
+    alb_backend_groups = {
+      "test-bg-a" = {
+        http_backends = [
           {
-            name               = "test-backend-a"
-            port               = 80
-            weight             = 100
+            name   = "test-backend-a"
+            port   = 80
+            weight = 100
             healthcheck = {
               healthcheck_port = 80
               http_healthcheck = {
                 path = "/"
               }
             }
-            target_groups_names_list     = ["target-group-a"]
+            target_groups_names_list = ["target-group-a"]
             //existing_target_groups_ids = ["<TARGET-GROUP-A-ID>"]
           }
         ]
       },
-      "test-bg-b"              = {
-        http_backends          = [
+      "test-bg-b" = {
+        http_backends = [
           {
-            name               = "test-backend-b"
-            port               = 80
-            weight             = 100
+            name   = "test-backend-b"
+            port   = 80
+            weight = 100
             healthcheck = {
               healthcheck_port = 80
               http_healthcheck = {
                 path = "/"
               }
             }
-            target_groups_names_list     = ["target-group-b"]
+            target_groups_names_list = ["target-group-b"]
             //existing_target_groups_ids = ["<TARGET-GROUP-B-ID>"]
           }
         ]
       }
     }
 
-    alb_http_routers  = ["http-router-test"]
+    alb_http_routers = ["http-router-test"]
 
     alb_virtual_hosts = {
       "virtual-host-a" = {
         http_router_name = "http-router-test"
-        authority = ["site-a.example.net"]
+        authority        = ["site-a.example.net"]
         route = {
           name = "http-virtual-route-a"
           http_route = {
@@ -94,7 +94,7 @@ module "alb" {
       },
       "virtual-host-b" = {
         http_router_name = "http-router-test"
-        authority = ["site-b.example.net"]
+        authority        = ["site-b.example.net"]
         route = {
           name = "http-virtual-route-b"
           http_route = {

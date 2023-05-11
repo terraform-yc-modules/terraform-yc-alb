@@ -424,7 +424,7 @@ variable "alb_load_balancer" {
       ```
 
   EOF
-  type = any
+  type        = any
 }
 variable "traffic_disabled" {
   description = "If set, will disable all L7 instances in the zone for request handling."
@@ -507,63 +507,50 @@ variable "alb_certificates" {
           - private_key_lockbox_secret_id
           - private_key_lockbox_secret_key
   EOF
-  type = any
-  default = {}
+  type        = any
+  default     = {}
 }
 
 # Labels
 variable "alb_load_balancer_labels" {
   description = "Default ALB Load Balancer labels"
-  type    = map(string)
+  type        = map(string)
   default = {
-    owner = "example"
-    component = "alb-load-balancer"
+    created_by = "terraform yc module"
   }
 }
 variable "alb_target_group_labels" {
   description = "Default target group labels"
-  type    = map(string)
+  type        = map(string)
   default = {
-    owner = "example"
-    component = "alb-target-group"
+    created_by = "terraform yc module"
   }
 }
 variable "alb_backend_groups_labels" {
   description = "Default backend group labels"
-  type    = map(string)
+  type        = map(string)
   default = {
-    owner = "example"
-    component = "alb-backend-group"
+    created_by = "terraform yc module"
   }
 }
 variable "alb_http_routers_labels" {
   description = "Default ALB HTTP Routers labels"
-  type    = map(string)
+  type        = map(string)
   default = {
-    owner = "example"
-    component = "alb-http-router"
+    created_by = "terraform yc module"
   }
 }
 variable "alb_certificates_labels" {
   description = "Default certificates labels"
-  type    = map(string)
+  type        = map(string)
   default = {
-    owner = "example"
-    component = "certificate-manager"
-  }
-}
-variable "dns_zone_labels" {
-  description = "Default DNS zone labels"
-  type    = map(string)
-  default = {
-    owner = "example"
-    component = "cloud-dns"
+    created_by = "terraform yc module"
   }
 }
 
 variable "timeouts" {
   description = "Target group timeouts"
-  type    = map(string)
+  type        = map(string)
   default = {
     create = "15m"
     update = "15m"
@@ -583,8 +570,8 @@ variable "enable_default_rules" {
      - allow access to ALB via port 443
      - allows availability checks from load balancer's address range
   EOF
-  type = bool
-  default = true
+  type        = bool
+  default     = true
 }
 
 variable "custom_ingress_rules" {
@@ -617,8 +604,8 @@ variable "custom_ingress_rules" {
     }
     ```
   EOF
-  type = any
-  default = {}
+  type        = any
+  default     = {}
 }
 
 variable "custom_egress_rules" {
@@ -645,8 +632,8 @@ variable "custom_egress_rules" {
     }
     ```
   EOF
-  type = any
-  default = {}
+  type        = any
+  default     = {}
 }
 
 variable "allowed_ips" {
@@ -656,9 +643,9 @@ variable "allowed_ips" {
 }
 
 resource "random_string" "unique_id" {
-   length  = 8
-   upper   = false
-   lower   = true
-   numeric = true
-   special = false
+  length  = 8
+  upper   = false
+  lower   = true
+  numeric = true
+  special = false
 }
