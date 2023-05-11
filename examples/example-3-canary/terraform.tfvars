@@ -4,8 +4,8 @@ public_dns_zone_name = "<PUBLIC_DNS_ZONE_NAME>"
 
 alb_load_balancer = {
   name = "canary-load-balancer"
-    
-  alb_target_groups  = {
+
+  alb_target_groups = {
     "target-group-prod-blue" = {
       targets = [
         {
@@ -17,7 +17,7 @@ alb_load_balancer = {
           ip_address = "<INSTANCE-IP>"
         },
         {
-          ip_address = "<INSTANCE-IP>"
+          ip_address           = "<INSTANCE-IP>"
           private_ipv4_address = true
         }
       ]
@@ -25,7 +25,7 @@ alb_load_balancer = {
     "target-group-prod-green" = {
       targets = [
         {
-          ip_address = "<INSTANCE-IP>"
+          ip_address           = "<INSTANCE-IP>"
           private_ipv4_address = true
         },
         {
@@ -49,7 +49,7 @@ alb_load_balancer = {
           ip_address = "<INSTANCE-IP>"
         },
         {
-          ip_address = "<INSTANCE-IP>"
+          ip_address           = "<INSTANCE-IP>"
           private_ipv4_address = true
         }
       ]
@@ -61,7 +61,7 @@ alb_load_balancer = {
           ip_address = "<INSTANCE-IP>"
         },
         {
-          ip_address = "<INSTANCE-IP>"
+          ip_address           = "<INSTANCE-IP>"
           private_ipv4_address = true
         },
         {
@@ -72,17 +72,17 @@ alb_load_balancer = {
     }
   }
 
-  alb_backend_groups  = {
+  alb_backend_groups = {
     "http-canary-bg-prod" = {
-      http_backends  = [
+      http_backends = [
         {
           name                     = "http-canary-prod-bg-blue"
           port                     = 8080
           weight                   = 50
           target_groups_names_list = ["target-group-prod-blue"]
-          healthcheck              = {
-            healthcheck_port       = 8080
-            http_healthcheck       = {}
+          healthcheck = {
+            healthcheck_port = 8080
+            http_healthcheck = {}
           }
         },
         {
@@ -90,23 +90,23 @@ alb_load_balancer = {
           port                     = 8081
           weight                   = 50
           target_groups_names_list = ["target-group-prod-green"]
-          healthcheck              = {
-            healthcheck_port       = 8081
-            http_healthcheck       = {}
+          healthcheck = {
+            healthcheck_port = 8081
+            http_healthcheck = {}
           }
         }
       ]
     },
     "http-canary-bg-stage" = {
-      http_backends  = [
+      http_backends = [
         {
           name                     = "http-canary-stage-bg-blue"
-          port                     =  8082
+          port                     = 8082
           weight                   = 50
           target_groups_names_list = ["target-group-stage-blue"]
-          healthcheck              = {
-            healthcheck_port       = 8082
-            http_healthcheck       = {}
+          healthcheck = {
+            healthcheck_port = 8082
+            http_healthcheck = {}
           }
         },
         {
@@ -114,9 +114,9 @@ alb_load_balancer = {
           port                     = 8083
           weight                   = 50
           target_groups_names_list = ["target-group-stage-green"]
-          healthcheck              = {
-            healthcheck_port       = 8083
-            http_healthcheck       = {}
+          healthcheck = {
+            healthcheck_port = 8083
+            http_healthcheck = {}
           }
         }
       ]
@@ -124,7 +124,7 @@ alb_load_balancer = {
   }
 
   // HTTP virtual router
-  alb_http_routers  = ["canary-router"]
+  alb_http_routers = ["canary-router"]
 
   // Virtual host requires:
   //  - each http route is using own backend group
@@ -132,7 +132,7 @@ alb_load_balancer = {
   alb_virtual_hosts = {
     "canary-vh-production" = {
       http_router_name = "canary-router"
-      authority = ["service-production.yandexcloud.example"]
+      authority        = ["service-production.yandexcloud.example"]
       route = {
         name = "canary-vh-production"
         http_route = {
@@ -144,7 +144,7 @@ alb_load_balancer = {
     },
     "canary-vh-staging" = {
       http_router_name = "canary-router"
-      authority = ["service-staging.yandexcloud.example"]
+      authority        = ["service-staging.yandexcloud.example"]
       route = {
         name = "canary-vh-staging"
         http_route = {

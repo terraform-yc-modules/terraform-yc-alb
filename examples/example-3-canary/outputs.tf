@@ -51,11 +51,11 @@ output "alb_load_balancer_name" {
 # ALB LB Public IPs
 output "alb_load_balancer_public_ips" {
   description = "ALB Load Balancer Public IPs."
-  value = try(module.yc-alb.alb_load_balancer_public_ips, null)
+  value       = try(module.yc-alb.alb_load_balancer_public_ips, null)
 }
 
 # ALB LB DNS name
 output "alb_dns_record_cname" {
   description = "ALB DNS CNAME"
-  value = try(module.yc-alb.alb_dns_record_cname, null)
+  value       = try(module.yc-alb.alb_dns_record_cname, null)
 }

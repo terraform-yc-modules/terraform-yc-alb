@@ -1,37 +1,37 @@
 output "alb_target_group_ids" {
   description = "ALB target group IDs"
-  value       = [ for target_group in yandex_alb_target_group.target_group : target_group.id ]
+  value       = [for target_group in yandex_alb_target_group.target_group : target_group.id]
 }
 output "alb_target_group_names" {
   description = "ALB target group names"
-  value       = [ for target_group in yandex_alb_target_group.target_group : target_group.name ]
+  value       = [for target_group in yandex_alb_target_group.target_group : target_group.name]
 }
 
 output "alb_backend_group_ids" {
   description = "ALB backend group IDs"
-  value       = [ for backend_group in yandex_alb_backend_group.backend_group : backend_group.id ]
+  value       = [for backend_group in yandex_alb_backend_group.backend_group : backend_group.id]
 }
 output "alb_backend_group_names" {
   description = "ALB backend group names"
-  value       = [ for backend_group in yandex_alb_backend_group.backend_group : backend_group.name ]
+  value       = [for backend_group in yandex_alb_backend_group.backend_group : backend_group.name]
 }
 
 output "alb_http_router_ids" {
   description = "ALB HTTP router IDs"
-  value       = var.create_alb ? [ for http_router in yandex_alb_http_router.http_router : http_router.id ] : []
+  value       = var.create_alb ? [for http_router in yandex_alb_http_router.http_router : http_router.id] : []
 }
 output "alb_http_router_names" {
   description = "ALB HTTP routers names"
-  value       = var.create_alb ? [ for http_router in yandex_alb_http_router.http_router : http_router.name ] : []
+  value       = var.create_alb ? [for http_router in yandex_alb_http_router.http_router : http_router.name] : []
 }
 
 output "alb_virtual_host_ids" {
   description = "ALB virtual router IDs"
-  value       = [ for virtual_router in yandex_alb_virtual_host.virtual_router : virtual_router.id ]
+  value       = [for virtual_router in yandex_alb_virtual_host.virtual_router : virtual_router.id]
 }
 output "alb_virtual_host_names" {
   description = "ALB virtual hosts names"
-  value       = [ for virtual_router in yandex_alb_virtual_host.virtual_router : virtual_router.name ]
+  value       = [for virtual_router in yandex_alb_virtual_host.virtual_router : virtual_router.name]
 }
 
 output "alb_load_balancer_id" {
@@ -45,7 +45,7 @@ output "alb_load_balancer_name" {
 
 output "alb_load_balancer_public_ips" {
   description = "ALB public IPs"
-  value       = [for ip in local.alb_external_ip_adresses: ip.address]
+  value       = [for ip in local.alb_external_ip_adresses : ip.address]
 }
 
 output "alb_dns_record_cname" {
