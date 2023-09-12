@@ -20,10 +20,6 @@ module "alb" {
             subnet_id  = "<SUBNET-ID-B>"
             ip_address = "<INSTANCE-IP>"
           },
-          {
-            ip_address           = "<INSTANCE-IP>"
-            private_ipv4_address = true
-          }
         ]
       },
       "target-group-b" = {

@@ -516,35 +516,35 @@ variable "alb_load_balancer_labels" {
   description = "Default ALB Load Balancer labels"
   type        = map(string)
   default = {
-    created_by = "terraform yc module"
+    created_by = "terraform_yc_module"
   }
 }
 variable "alb_target_group_labels" {
   description = "Default target group labels"
   type        = map(string)
   default = {
-    created_by = "terraform yc module"
+    created_by = "terraform_yc_module"
   }
 }
 variable "alb_backend_groups_labels" {
   description = "Default backend group labels"
   type        = map(string)
   default = {
-    created_by = "terraform yc module"
+    created_by = "terraform_yc_module"
   }
 }
 variable "alb_http_routers_labels" {
   description = "Default ALB HTTP Routers labels"
   type        = map(string)
   default = {
-    created_by = "terraform yc module"
+    created_by = "terraform_yc_module"
   }
 }
 variable "alb_certificates_labels" {
   description = "Default certificates labels"
   type        = map(string)
   default = {
-    created_by = "terraform yc module"
+    created_by = "terraform_yc_module"
   }
 }
 
