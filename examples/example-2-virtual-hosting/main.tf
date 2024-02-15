@@ -159,8 +159,8 @@ module "alb" {
         subnet_id = "<SUBNET-ID-ZONE-B>"
       },
       {
-        zone      = "ru-central1-c"
-        subnet_id = "<SUBNET-ID-ZONE-C>"
+        zone      = "ru-central1-d"
+        subnet_id = "<SUBNET-ID-ZONE-D>"
       }
     ]
 
