@@ -50,5 +50,5 @@ output "alb_load_balancer_public_ips" {
 
 output "alb_dns_record_cname" {
   description = "ALB DNS record with external IP address"
-  value       = var.create_alb && var.public_dns_record ==true ? "${yandex_dns_recordset.alb_external_ip_dns_name[0].name}.${var.public_dns_zone_name}" : ""
+  value       = var.create_alb && var.public_dns_record == true ? "${yandex_dns_recordset.alb_external_ip_dns_name[0].name}.${var.public_dns_zone_name}" : ""
 }

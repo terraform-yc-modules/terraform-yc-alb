@@ -654,7 +654,7 @@ locals {
 }
 
 resource "yandex_dns_recordset" "alb_external_ip_dns_name" {
-  count      = var.create_alb && var.public_dns_record ==true ? 1 : 0
+  count      = var.create_alb && var.public_dns_record == true ? 1 : 0
   zone_id    = try(var.public_dns_zone_id, null)
   name       = try(var.alb_load_balancer.name, null)
   type       = "CNAME"
