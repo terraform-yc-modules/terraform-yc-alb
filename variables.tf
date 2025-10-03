@@ -459,6 +459,11 @@ variable "cert_waiting_timer" {
   type        = string
   default     = "300s"
 }
+variable "public_dns_record" {
+  description = "Flag for enabling create dns record in public zone"
+  type        = bool
+  default     = false
+}
 variable "public_dns_zone_name" {
   description = <<EOF
     Public DNS zone name
