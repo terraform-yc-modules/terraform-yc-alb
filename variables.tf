@@ -165,11 +165,24 @@ variable "alb_load_balancer" {
 
     3. HTTP routers
 
-      A list of HTTP routers names
+      A list of HTTP router names. This legacy form remains supported.
+      A map is also accepted to set per-router `description`, `labels`, and
+      `route_options` (security profile and RBAC) without changing resource addresses.
 
       Example:
       ```
       alb_http_routers  = ["http-router-1", "http-router-2"]
+      ```
+
+      Map form:
+      ```
+      alb_http_routers = {
+        "http-router-1" = {
+          route_options = {
+            security_profile_id = "<security-profile-id>"
+          }
+        }
+      }
       ```
 
     4. Virtual hosts
@@ -582,6 +595,10 @@ variable "enable_default_rules" {
 variable "custom_ingress_rules" {
   description = <<-EOF
     A map definition of custom security ingress rules.
+    In addition to ports and IPv4 CIDRs, a rule can use `v6_cidr_blocks`,
+    `predefined_target`, `security_group_id`, and `labels`.
+    Specify only one target selector: IPv4 CIDRs, IPv6 CIDRs,
+    `predefined_target`, or `security_group_id`.
     
     Example:
     ```
@@ -616,6 +633,10 @@ variable "custom_ingress_rules" {
 variable "custom_egress_rules" {
   description = <<-EOF
     A map definition of custom security egress rules.
+    In addition to ports and IPv4 CIDRs, a rule can use `v6_cidr_blocks`,
+    `predefined_target`, `security_group_id`, and `labels`.
+    Specify only one target selector: IPv4 CIDRs, IPv6 CIDRs,
+    `predefined_target`, or `security_group_id`.
     
     Example:
     ```
