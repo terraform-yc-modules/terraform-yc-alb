@@ -732,7 +732,7 @@ export YC_FOLDER_ID=$(yc config get folder-id)
 ## Requirements
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0.0 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | > 3.3 |
 | <a name="requirement_time"></a> [time](#requirement\_time) | 0.9.1 |
@@ -741,10 +741,10 @@ export YC_FOLDER_ID=$(yc config get folder-id)
 ## Providers
 
 | Name | Version |
-|------|---------|
-| <a name="provider_random"></a> [random](#provider\_random) | > 3.3 |
+| ---- | ------- |
+| <a name="provider_random"></a> [random](#provider\_random) | 3.9.1 |
 | <a name="provider_time"></a> [time](#provider\_time) | 0.9.1 |
-| <a name="provider_yandex"></a> [yandex](#provider\_yandex) | >= 0.228.0 |
+| <a name="provider_yandex"></a> [yandex](#provider\_yandex) | 0.250.0 |
 
 ## Modules
 
@@ -753,7 +753,7 @@ No modules.
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [random_string.unique_id](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
 | [time_sleep.wait_for_cert_will_be_issued](https://registry.terraform.io/providers/hashicorp/time/0.9.1/docs/resources/sleep) | resource |
 | [yandex_alb_backend_group.backend_group](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/alb_backend_group) | resource |
@@ -773,7 +773,7 @@ No modules.
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_alb_backend_groups_labels"></a> [alb\_backend\_groups\_labels](#input\_alb\_backend\_groups\_labels) | Default backend group labels | `map(string)` | <pre>{<br/>  "created_by": "terraform_yc_module"<br/>}</pre> | no |
 | <a name="input_alb_certificates"></a> [alb\_certificates](#input\_alb\_certificates) | List of maps for ALB certificates.<br/><br/>    Notes:<br/>      - Use only one type, either `managed` or `self_managed`<br/>      - Resource creation awaits getting challenges from issue provider.<br/>      - Self-managed certificates support only one type of `private_key` or `private_key_lockbox_secret`<br/>      - You can provide self managed certificates and private keys as both strings and file names.<br/>      - All self-signed certificates must be located in `<path.module>/content/tls/<your_folder>`.<br/>      - Self-managed private keys can be read from Lockbox; for this, you need to specify the Lockbox private key secret ID and secret key.<br/><br/>    Parameters:<br/>      - name<br/>      - description<br/>      - labels<br/>      - domains - a list of domains for this certificate.<br/>      - managed:<br/>        - challenge\_type - (Required) Domain owner-check method. Possible values:<br/>          "DNS\_CNAME" - you will need to create a CNAME dns record with the specified value. Recommended for fully automated certificate renewal;<br/>          "DNS\_TXT" - you will need to create a TXT dns record with specified value;<br/>          "HTTP" - you will need to place specified value into specified url.<br/>        - challenge\_count - (Optional). Expected number of challenge count needed to validate certificate.<br/>      - self\_managed:<br/>        - certificate\_string         - (Required) Certificate as a string with chain.<br/>        - private\_key\_string         - (Optional) Private key as a string of certificate.<br/>        - certificate\_filename       - (Required) Certificate filename with chain.<br/>        - private\_key\_filename       - (Optional) Private key filename of certificate.<br/>        - private\_key\_lockbox\_secret - (Optional) Lockbox secret specification for getting private key.<br/>          - private\_key\_lockbox\_secret\_id<br/>          - private\_key\_lockbox\_secret\_key | `any` | `{}` | no |
 | <a name="input_alb_certificates_labels"></a> [alb\_certificates\_labels](#input\_alb\_certificates\_labels) | Default certificates labels | `map(string)` | <pre>{<br/>  "created_by": "terraform_yc_module"<br/>}</pre> | no |
@@ -803,7 +803,7 @@ No modules.
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_alb_backend_group_ids"></a> [alb\_backend\_group\_ids](#output\_alb\_backend\_group\_ids) | ALB backend group IDs |
 | <a name="output_alb_backend_group_names"></a> [alb\_backend\_group\_names](#output\_alb\_backend\_group\_names) | ALB backend group names |
 | <a name="output_alb_dns_record_cname"></a> [alb\_dns\_record\_cname](#output\_alb\_dns\_record\_cname) | ALB DNS record with external IP address |

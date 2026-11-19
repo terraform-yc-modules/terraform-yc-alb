@@ -47,11 +47,11 @@ locals {
 
   # `alb_http_routers` historically accepted a list of names. A map is an
   # opt-in extension that additionally configures each router.
-  alb_http_router_configs = can(tolist(try(var.alb_load_balancer.alb_http_routers, []))) ? {
-    for name in toset(try(tolist(var.alb_load_balancer.alb_http_routers), [])) : name => {}
-    } : {
-    for name, config in try(tomap(var.alb_load_balancer.alb_http_routers), {}) : name => config
-  }
+  alb_http_routers = try(var.alb_load_balancer.alb_http_routers, null)
+  alb_http_router_configs = merge(
+    { for name in try(toset(local.alb_http_routers), toset([])) : name => {} },
+    { for name in try(keys(local.alb_http_routers), []) : name => local.alb_http_routers[name] },
+  )
 }
 #
 # ALB Target Group
@@ -298,7 +298,7 @@ resource "yandex_alb_backend_group" "backend_group" {
 
 # ALB HTTP Router
 resource "yandex_alb_http_router" "http_router" {
-  for_each = var.create_alb ? local.alb_http_router_configs : {}
+  for_each = { for name, config in local.alb_http_router_configs : name => config if var.create_alb }
 
   name        = each.key
   folder_id   = local.folder_id
