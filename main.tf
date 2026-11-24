@@ -49,7 +49,7 @@ locals {
   # opt-in extension that additionally configures each router.
   alb_http_routers = try(var.alb_load_balancer.alb_http_routers, null)
   alb_http_router_configs = merge(
-    { for name in try(toset(local.alb_http_routers), toset([])) : name => {} },
+    { for name in try(coalesce(toset(local.alb_http_routers), toset([])), toset([])) : name => {} },
     { for name in try(keys(local.alb_http_routers), []) : name => local.alb_http_routers[name] },
   )
 }
