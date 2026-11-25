@@ -44,6 +44,14 @@ locals {
     ] : [], length(var.custom_ingress_rules) > 0 || length(var.custom_egress_rules) > 0 ? [
     yandex_vpc_security_group.alb_custom_rules_sg[0].id
   ] : [])
+
+  # `alb_http_routers` historically accepted a list of names. A map is an
+  # opt-in extension that additionally configures each router.
+  alb_http_routers = try(var.alb_load_balancer.alb_http_routers, null)
+  alb_http_router_configs = merge(
+    { for name in try(coalesce(toset(local.alb_http_routers), toset([])), toset([])) : name => {} },
+    { for name in try(keys(local.alb_http_routers), []) : name => local.alb_http_routers[name] },
+  )
 }
 #
 # ALB Target Group
@@ -62,6 +70,7 @@ resource "yandex_alb_target_group" "target_group" {
       subnet_id            = try(target.value["subnet_id"], null)
       ip_address           = try(target.value["ip_address"], null)
       private_ipv4_address = try(target.value["private_ipv4_address"], null)
+      external_address     = try(target.value["external_address"], null)
     }
   }
 
@@ -82,6 +91,34 @@ resource "yandex_alb_backend_group" "backend_group" {
   description = lookup(each.value, "description", "ALB backend group - ${each.key}")
   labels      = lookup(each.value, "labels", var.alb_backend_groups_labels)
 
+  dynamic "session_affinity" {
+    for_each = try(each.value.session_affinity, null) == null ? [] : [each.value.session_affinity]
+    content {
+      dynamic "connection" {
+        for_each = try(session_affinity.value.connection, null) == null ? [] : [session_affinity.value.connection]
+        content {
+          source_ip = lookup(connection.value, "source_ip", null)
+        }
+      }
+
+      dynamic "cookie" {
+        for_each = try(session_affinity.value.cookie, null) == null ? [] : [session_affinity.value.cookie]
+        content {
+          name = lookup(cookie.value, "name", null)
+          ttl  = lookup(cookie.value, "ttl", null)
+          path = lookup(cookie.value, "path", null)
+        }
+      }
+
+      dynamic "header" {
+        for_each = try(session_affinity.value.header, null) == null ? [] : [session_affinity.value.header]
+        content {
+          header_name = lookup(header.value, "header_name", null)
+        }
+      }
+    }
+  }
+
   # Only one type of backends http_backend or grpc_backend or stream_backend should be specified.
   dynamic "http_backend" {
     for_each = flatten([lookup(each.value, "http_backends", [])])
@@ -90,13 +127,19 @@ resource "yandex_alb_backend_group" "backend_group" {
       weight           = lookup(http_backend.value, "weight", local.backend_defaults.weight)
       port             = lookup(http_backend.value, "port", null)
       target_group_ids = concat([for target in try(http_backend.value.target_groups_names_list, []) : yandex_alb_target_group.target_group[target].id], try(http_backend.value.existing_target_groups_ids, []))
+      storage_bucket   = lookup(http_backend.value, "storage_bucket", null)
 
       dynamic "tls" {
         for_each = flatten([lookup(http_backend.value, "tls", [])])
         content {
           sni = lookup(tls.value, "sni", null)
-          #validation_context.0.trusted_ca_id = lookup(tls.value, "validation_context_trusted_ca_id", null)
-          #validation_context.0.trusted_ca_bytes = lookup(tls.value, "validation_context_trusted_ca_bytes", null)
+          dynamic "validation_context" {
+            for_each = try(tls.value.validation_context, null) == null ? [] : [tls.value.validation_context]
+            content {
+              trusted_ca_id    = lookup(validation_context.value, "trusted_ca_id", null)
+              trusted_ca_bytes = lookup(validation_context.value, "trusted_ca_bytes", null)
+            }
+          }
         }
       }
 
@@ -123,9 +166,10 @@ resource "yandex_alb_backend_group" "backend_group" {
           dynamic "http_healthcheck" {
             for_each = flatten([lookup(healthcheck.value, "http_healthcheck", [])])
             content {
-              host  = lookup(http_healthcheck.value, "host", null)
-              path  = lookup(http_healthcheck.value, "path", local.backend_defaults.http_healthcheck.path)
-              http2 = lookup(http_healthcheck.value, "http2", local.backend_defaults.http2)
+              host              = lookup(http_healthcheck.value, "host", null)
+              path              = lookup(http_healthcheck.value, "path", local.backend_defaults.http_healthcheck.path)
+              http2             = lookup(http_healthcheck.value, "http2", local.backend_defaults.http2)
+              expected_statuses = lookup(http_healthcheck.value, "expected_statuses", null)
             }
           }
         }
@@ -137,17 +181,24 @@ resource "yandex_alb_backend_group" "backend_group" {
   dynamic "stream_backend" {
     for_each = flatten([lookup(each.value, "stream_backends", [])])
     content {
-      name             = lookup(stream_backend.value, "name", null)
-      weight           = lookup(stream_backend.value, "weight", local.backend_defaults.weight)
-      port             = lookup(stream_backend.value, "port", null)
-      target_group_ids = concat([for target in try(stream_backend.value.target_groups_names_list, []) : yandex_alb_target_group.target_group[target].id], try(stream_backend.value.existing_target_groups_ids, []))
+      name                                    = lookup(stream_backend.value, "name", null)
+      weight                                  = lookup(stream_backend.value, "weight", local.backend_defaults.weight)
+      port                                    = lookup(stream_backend.value, "port", null)
+      target_group_ids                        = concat([for target in try(stream_backend.value.target_groups_names_list, []) : yandex_alb_target_group.target_group[target].id], try(stream_backend.value.existing_target_groups_ids, []))
+      enable_proxy_protocol                   = lookup(stream_backend.value, "enable_proxy_protocol", null)
+      keep_connections_on_host_health_failure = lookup(stream_backend.value, "keep_connections_on_host_health_failure", null)
 
       dynamic "tls" {
         for_each = flatten([lookup(stream_backend.value, "tls", [])])
         content {
           sni = lookup(tls.value, "sni", null)
-          #validation_context.0.trusted_ca_id = lookup(tls.value["validation_context_trusted_ca_id"], null)
-          #validation_context.0.trusted_ca_bytes = lookup(tls.value["validation_context_trusted_ca_bytes"], null)
+          dynamic "validation_context" {
+            for_each = try(tls.value.validation_context, null) == null ? [] : [tls.value.validation_context]
+            content {
+              trusted_ca_id    = lookup(validation_context.value, "trusted_ca_id", null)
+              trusted_ca_bytes = lookup(validation_context.value, "trusted_ca_bytes", null)
+            }
+          }
         }
       }
 
@@ -195,8 +246,13 @@ resource "yandex_alb_backend_group" "backend_group" {
         for_each = flatten([lookup(grpc_backend.value, "tls", [])])
         content {
           sni = lookup(tls.value, "sni", null)
-          #validation_context.0.trusted_ca_id = lookup(tls.value["validation_context_trusted_ca_id"], null)
-          #validation_context.0.trusted_ca_bytes = lookup(tls.value["validation_context_trusted_ca_bytes"], null)
+          dynamic "validation_context" {
+            for_each = try(tls.value.validation_context, null) == null ? [] : [tls.value.validation_context]
+            content {
+              trusted_ca_id    = lookup(validation_context.value, "trusted_ca_id", null)
+              trusted_ca_bytes = lookup(validation_context.value, "trusted_ca_bytes", null)
+            }
+          }
         }
       }
 
@@ -242,12 +298,54 @@ resource "yandex_alb_backend_group" "backend_group" {
 
 # ALB HTTP Router
 resource "yandex_alb_http_router" "http_router" {
-  for_each = var.create_alb ? length(var.alb_load_balancer.alb_http_routers) > 0 ? toset(var.alb_load_balancer.alb_http_routers) : toset([]) : toset([])
+  for_each = { for name, config in local.alb_http_router_configs : name => config if var.create_alb }
 
-  name        = each.value
+  name        = each.key
   folder_id   = local.folder_id
-  description = "ALB HTTP router - ${each.value}"
-  labels      = var.alb_http_routers_labels
+  description = lookup(each.value, "description", "ALB HTTP router - ${each.key}")
+  labels      = lookup(each.value, "labels", var.alb_http_routers_labels)
+
+  dynamic "route_options" {
+    for_each = try(each.value.route_options, null) == null ? [] : [each.value.route_options]
+    content {
+      security_profile_id = lookup(route_options.value, "security_profile_id", null)
+
+      dynamic "rbac" {
+        for_each = try(route_options.value.rbac, null) == null ? [] : [route_options.value.rbac]
+        content {
+          action = lookup(rbac.value, "action", null)
+
+          dynamic "principals" {
+            for_each = lookup(rbac.value, "principals", [])
+            content {
+              dynamic "and_principals" {
+                for_each = lookup(principals.value, "and_principals", [])
+                content {
+                  remote_ip = lookup(and_principals.value, "remote_ip", null)
+                  any       = lookup(and_principals.value, "any", null)
+
+                  dynamic "header" {
+                    for_each = try(and_principals.value.header, null) == null ? [] : [and_principals.value.header]
+                    content {
+                      name = lookup(header.value, "name", null)
+                      dynamic "value" {
+                        for_each = try(header.value.value, null) == null ? [] : [header.value.value]
+                        content {
+                          exact  = lookup(value.value, "exact", null)
+                          prefix = lookup(value.value, "prefix", null)
+                          regex  = lookup(value.value, "regex", null)
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 
   timeouts {
     create = var.timeouts.create
@@ -264,6 +362,69 @@ resource "yandex_alb_virtual_host" "virtual_router" {
   name           = each.key
   http_router_id = var.create_alb ? "${yandex_alb_http_router.http_router["${each.value.http_router_name}"].id}" : "${var.http_router_id}"
   authority      = lookup(each.value, "authority", [])
+
+  dynamic "route_options" {
+    for_each = try(each.value.route_options, null) == null ? [] : [each.value.route_options]
+    content {
+      security_profile_id = lookup(route_options.value, "security_profile_id", null)
+
+      dynamic "rbac" {
+        for_each = try(route_options.value.rbac, null) == null ? [] : [route_options.value.rbac]
+        content {
+          action = lookup(rbac.value, "action", null)
+
+          dynamic "principals" {
+            for_each = lookup(rbac.value, "principals", [])
+            content {
+              dynamic "and_principals" {
+                for_each = lookup(principals.value, "and_principals", [])
+                content {
+                  remote_ip = lookup(and_principals.value, "remote_ip", null)
+                  any       = lookup(and_principals.value, "any", null)
+
+                  dynamic "header" {
+                    for_each = try(and_principals.value.header, null) == null ? [] : [and_principals.value.header]
+                    content {
+                      name = lookup(header.value, "name", null)
+                      dynamic "value" {
+                        for_each = try(header.value.value, null) == null ? [] : [header.value.value]
+                        content {
+                          exact  = lookup(value.value, "exact", null)
+                          prefix = lookup(value.value, "prefix", null)
+                          regex  = lookup(value.value, "regex", null)
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  dynamic "rate_limit" {
+    for_each = try(each.value.rate_limit, null) == null ? [] : [each.value.rate_limit]
+    content {
+      dynamic "all_requests" {
+        for_each = try(rate_limit.value.all_requests, null) == null ? [] : [rate_limit.value.all_requests]
+        content {
+          per_second = lookup(all_requests.value, "per_second", null)
+          per_minute = lookup(all_requests.value, "per_minute", null)
+        }
+      }
+
+      dynamic "requests_per_ip" {
+        for_each = try(rate_limit.value.requests_per_ip, null) == null ? [] : [rate_limit.value.requests_per_ip]
+        content {
+          per_second = lookup(requests_per_ip.value, "per_second", null)
+          per_minute = lookup(requests_per_ip.value, "per_minute", null)
+        }
+      }
+    }
+  }
 
   dynamic "modify_request_headers" {
     for_each = flatten([lookup(each.value, "modify_request_headers", [])])
@@ -288,7 +449,60 @@ resource "yandex_alb_virtual_host" "virtual_router" {
     for_each = flatten([lookup(each.value, "route", [])])
 
     content {
-      name = lookup(route.value, "name", null)
+      name                     = lookup(route.value, "name", null)
+      disable_security_profile = lookup(route.value, "disable_security_profile", null)
+
+      dynamic "route_options" {
+        for_each = try(route.value.route_options, null) == null ? [] : [route.value.route_options]
+        content {
+          security_profile_id = lookup(route_options.value, "security_profile_id", null)
+
+          dynamic "rbac" {
+            for_each = try(route_options.value.rbac, null) == null ? [] : [route_options.value.rbac]
+            content {
+              action = lookup(rbac.value, "action", null)
+
+              dynamic "principals" {
+                for_each = lookup(rbac.value, "principals", [])
+                content {
+                  dynamic "and_principals" {
+                    for_each = lookup(principals.value, "and_principals", [])
+                    content {
+                      remote_ip = lookup(and_principals.value, "remote_ip", null)
+                      any       = lookup(and_principals.value, "any", null)
+
+                      dynamic "header" {
+                        for_each = try(and_principals.value.header, null) == null ? [] : [and_principals.value.header]
+                        content {
+                          name = lookup(header.value, "name", null)
+                          dynamic "value" {
+                            for_each = try(header.value.value, null) == null ? [] : [header.value.value]
+                            content {
+                              exact  = lookup(value.value, "exact", null)
+                              prefix = lookup(value.value, "prefix", null)
+                              regex  = lookup(value.value, "regex", null)
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      dynamic "client_certificate_forward" {
+        for_each = try(route.value.client_certificate_forward, null) == null ? [] : [route.value.client_certificate_forward]
+        content {
+          http_header         = lookup(client_certificate_forward.value, "http_header", null)
+          issuer_header_name  = lookup(client_certificate_forward.value, "issuer_header_name", null)
+          subject_header_name = lookup(client_certificate_forward.value, "subject_header_name", null)
+        }
+      }
+
       dynamic "http_route" {
         for_each = flatten([lookup(route.value, "http_route", [])])
         content {
@@ -318,6 +532,35 @@ resource "yandex_alb_virtual_host" "virtual_router" {
               auto_host_rewrite = lookup(http_route_action.value, "auto_host_rewrite", null)
               prefix_rewrite    = lookup(http_route_action.value, "prefix_rewrite", null)
               upgrade_types     = lookup(http_route_action.value, "upgrade_types", [])
+
+              dynamic "regex_rewrite" {
+                for_each = try(http_route_action.value.regex_rewrite, null) == null ? [] : [http_route_action.value.regex_rewrite]
+                content {
+                  regex      = lookup(regex_rewrite.value, "regex", null)
+                  substitute = lookup(regex_rewrite.value, "substitute", null)
+                }
+              }
+
+              dynamic "rate_limit" {
+                for_each = try(http_route_action.value.rate_limit, null) == null ? [] : [http_route_action.value.rate_limit]
+                content {
+                  dynamic "all_requests" {
+                    for_each = try(rate_limit.value.all_requests, null) == null ? [] : [rate_limit.value.all_requests]
+                    content {
+                      per_second = lookup(all_requests.value, "per_second", null)
+                      per_minute = lookup(all_requests.value, "per_minute", null)
+                    }
+                  }
+
+                  dynamic "requests_per_ip" {
+                    for_each = try(rate_limit.value.requests_per_ip, null) == null ? [] : [rate_limit.value.requests_per_ip]
+                    content {
+                      per_second = lookup(requests_per_ip.value, "per_second", null)
+                      per_minute = lookup(requests_per_ip.value, "per_minute", null)
+                    }
+                  }
+                }
+              }
             }
           }
           dynamic "redirect_action" {
@@ -365,6 +608,27 @@ resource "yandex_alb_virtual_host" "virtual_router" {
               idle_timeout      = lookup(grpc_route_action.value, "idle_timeout", null)
               host_rewrite      = lookup(grpc_route_action.value, "host_rewrite", null)
               auto_host_rewrite = lookup(grpc_route_action.value, "auto_host_rewrite", null)
+
+              dynamic "rate_limit" {
+                for_each = try(grpc_route_action.value.rate_limit, null) == null ? [] : [grpc_route_action.value.rate_limit]
+                content {
+                  dynamic "all_requests" {
+                    for_each = try(rate_limit.value.all_requests, null) == null ? [] : [rate_limit.value.all_requests]
+                    content {
+                      per_second = lookup(all_requests.value, "per_second", null)
+                      per_minute = lookup(all_requests.value, "per_minute", null)
+                    }
+                  }
+
+                  dynamic "requests_per_ip" {
+                    for_each = try(rate_limit.value.requests_per_ip, null) == null ? [] : [rate_limit.value.requests_per_ip]
+                    content {
+                      per_second = lookup(requests_per_ip.value, "per_second", null)
+                      per_minute = lookup(requests_per_ip.value, "per_minute", null)
+                    }
+                  }
+                }
+              }
             }
           }
           dynamic "grpc_status_response_action" {
@@ -460,6 +724,15 @@ resource "yandex_alb_load_balancer" "alb_load_balancer" {
   labels             = try(var.alb_load_balancer.labels, var.alb_load_balancer_labels)
   region_id          = try(var.alb_load_balancer.region_id, local.default_values.region_id)
   security_group_ids = local.security_groups_list
+  allow_zonal_shift  = try(var.alb_load_balancer.allow_zonal_shift, null)
+
+  dynamic "auto_scale_policy" {
+    for_each = try(var.alb_load_balancer.auto_scale_policy, null) == null ? [] : [var.alb_load_balancer.auto_scale_policy]
+    content {
+      max_size      = lookup(auto_scale_policy.value, "max_size", null)
+      min_zone_size = lookup(auto_scale_policy.value, "min_zone_size", null)
+    }
+  }
 
   allocation_policy {
     dynamic "location" {
@@ -513,8 +786,9 @@ resource "yandex_alb_load_balancer" "alb_load_balancer" {
           dynamic "handler" {
             for_each = flatten([lookup(http.value, "handler", [])])
             content {
-              http_router_id     = yandex_alb_http_router.http_router["${handler.value.http_router_name}"].id
-              rewrite_request_id = lookup(handler.value, "rewrite_request_id", null)
+              http_router_id               = yandex_alb_http_router.http_router["${handler.value.http_router_name}"].id
+              rewrite_request_id           = lookup(handler.value, "rewrite_request_id", null)
+              preserve_http1_header_casing = lookup(handler.value, "preserve_http1_header_casing", null)
               dynamic "http2_options" {
                 for_each = flatten([lookup(handler.value, "http2_options", [])])
                 content {
@@ -539,6 +813,7 @@ resource "yandex_alb_load_balancer" "alb_load_balancer" {
             for_each = flatten([lookup(stream.value, "handler", [])])
             content {
               backend_group_id = yandex_alb_backend_group.backend_group[handler.value.backend_group_name].id
+              idle_timeout     = lookup(handler.value, "idle_timeout", null)
             }
           }
         }
@@ -552,8 +827,9 @@ resource "yandex_alb_load_balancer" "alb_load_balancer" {
               dynamic "http_handler" {
                 for_each = flatten([lookup(default_handler.value, "http_handler", [])])
                 content {
-                  http_router_id     = yandex_alb_http_router.http_router["${http_handler.value.http_router_name}"].id
-                  rewrite_request_id = lookup(http_handler.value, "rewrite_request_id", null)
+                  http_router_id               = yandex_alb_http_router.http_router["${http_handler.value.http_router_name}"].id
+                  rewrite_request_id           = lookup(http_handler.value, "rewrite_request_id", null)
+                  preserve_http1_header_casing = lookup(http_handler.value, "preserve_http1_header_casing", null)
                   dynamic "http2_options" {
                     for_each = flatten([lookup(http_handler.value, "http2_options", [])])
                     content {
@@ -567,10 +843,21 @@ resource "yandex_alb_load_balancer" "alb_load_balancer" {
                 for_each = flatten([lookup(default_handler.value, "stream_handler", [])])
                 content {
                   backend_group_id = yandex_alb_backend_group.backend_group[stream_handler.value.backend_group_name].id
+                  idle_timeout     = lookup(stream_handler.value, "idle_timeout", null)
                 }
               }
               # NOTE: if create_certificate = true, certificate should be passed as a name of newly created certificate or as a list of previously created CM certificate ids 
               certificate_ids = var.create_certificate ? compact([for cert in yandex_cm_certificate.alb_cm_certificate : cert.name == default_handler.value.cert_name ? "${cert.id}" : ""]) : default_handler.value.certificate_ids
+
+              dynamic "client_certificates_verification" {
+                for_each = try(default_handler.value.client_certificates_verification, null) == null ? [] : [default_handler.value.client_certificates_verification]
+                content {
+                  require_client_certificate = lookup(client_certificates_verification.value, "require_client_certificate", null)
+                  bytes                      = lookup(client_certificates_verification.value, "bytes", null)
+                  accept_untrusted           = lookup(client_certificates_verification.value, "accept_untrusted", null)
+                  allow_expired              = lookup(client_certificates_verification.value, "allow_expired", null)
+                }
+              }
             }
           }
           dynamic "sni_handler" {
@@ -584,8 +871,9 @@ resource "yandex_alb_load_balancer" "alb_load_balancer" {
                   dynamic "http_handler" {
                     for_each = flatten([lookup(handler.value, "http_handler", [])])
                     content {
-                      http_router_id     = yandex_alb_http_router.http_router["${http_handler.value.http_router_name}"].id
-                      rewrite_request_id = lookup(http_handler.value, "rewrite_request_id", null)
+                      http_router_id               = yandex_alb_http_router.http_router["${http_handler.value.http_router_name}"].id
+                      rewrite_request_id           = lookup(http_handler.value, "rewrite_request_id", null)
+                      preserve_http1_header_casing = lookup(http_handler.value, "preserve_http1_header_casing", null)
                       dynamic "http2_options" {
                         for_each = flatten([lookup(http_handler.value, "http2_options", [])])
                         content {
@@ -599,9 +887,20 @@ resource "yandex_alb_load_balancer" "alb_load_balancer" {
                     for_each = flatten([lookup(handler.value, "stream_handler", [])])
                     content {
                       backend_group_id = yandex_alb_backend_group.backend_group[stream_handler.value.backend_group_name].id
+                      idle_timeout     = lookup(stream_handler.value, "idle_timeout", null)
                     }
                   }
                   certificate_ids = var.create_certificate ? compact([for cert in yandex_cm_certificate.alb_cm_certificate : cert.name == handler.value.cert_name ? "${cert.id}" : ""]) : handler.value.certificate_ids
+
+                  dynamic "client_certificates_verification" {
+                    for_each = try(handler.value.client_certificates_verification, null) == null ? [] : [handler.value.client_certificates_verification]
+                    content {
+                      require_client_certificate = lookup(client_certificates_verification.value, "require_client_certificate", null)
+                      bytes                      = lookup(client_certificates_verification.value, "bytes", null)
+                      accept_untrusted           = lookup(client_certificates_verification.value, "accept_untrusted", null)
+                      allow_expired              = lookup(client_certificates_verification.value, "allow_expired", null)
+                    }
+                  }
                 }
               }
             }
@@ -621,7 +920,7 @@ resource "yandex_alb_load_balancer" "alb_load_balancer" {
         content {
           http_codes          = lookup(discard_rule.value, "http_codes", null)
           http_code_intervals = lookup(discard_rule.value, "http_code_intervals", null)
-          grpc_codes          = lookup(discard_rule.value, "gprc_codes", null)
+          grpc_codes          = lookup(discard_rule.value, "grpc_codes", lookup(discard_rule.value, "gprc_codes", null))
           discard_percent     = lookup(discard_rule.value, "discard_percent", null)
         }
       }

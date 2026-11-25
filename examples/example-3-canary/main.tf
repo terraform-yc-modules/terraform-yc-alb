@@ -16,6 +16,7 @@ module "yc-alb" {
           {
             subnet_id  = "<SUBNET-ID-A>"
             ip_address = "<INSTANCE-IP>"
+            # Set external_address = true for targets outside the VPC.
           },
           {
             subnet_id  = "<SUBNET-ID-B>"
@@ -87,7 +88,9 @@ module "yc-alb" {
             existing_target_groups_ids = ["<TARGET-GROUP-ID>"]
             healthcheck = {
               healthcheck_port = 8080
-              http_healthcheck = {}
+              http_healthcheck = {
+                # expected_statuses = [200, 204]
+              }
             }
           },
           {
@@ -143,6 +146,8 @@ module "yc-alb" {
           http_route = {
             http_route_action = {
               backend_group_name = "http-canary-bg-prod"
+              # regex_rewrite = { regex = "^/v1/(.*)$", substitute = "/$1" }
+              # rate_limit    = { requests_per_ip = { per_minute = 120 } }
             }
           }
         }
